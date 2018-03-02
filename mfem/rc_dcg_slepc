@@ -1,0 +1,22 @@
+# Options for the Krylov solver
+-s_ksp_view
+-s_ksp_converged_reason
+-s_ksp_type dcg
+-s_ksp_norm_type unpreconditioned
+# Options for the preconditioner
+-s_pc_type none
+
+#dcg opt
+-s_ksp_dcg_compute_space slepc
+-s_ksp_dcg_compute_space_size 10
+#-ksp_dcg_initcg
+
+-eps_view
+-eps_converged_reason
+#-eps_type lobpcg
+-eps_type jd
+-eps_ncv 100
+-eps_tol 1e-10
+-eps_max_it 200
+
+-log_view

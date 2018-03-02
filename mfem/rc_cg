@@ -1,0 +1,12 @@
+# Options for the Krylov solver
+-s_ksp_view
+-s_ksp_converged_reason
+-s_ksp_type cg
+-s_ksp_norm_type unpreconditioned
+# Options for the preconditioner
+-s_pc_type none
+
+-s_ksp_max_it 20000
+
+#-log_view
+
