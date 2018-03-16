@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
    bool use_petsc = true;
    const char *petscrc_file = "";
    bool use_nonoverlapping = false;
-   double nelems = 1000;
+   int ref_levels = 1;
    int par_ref_levels = 2;
    bool dcgmg = false;
 
@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
                   "-no-nonoverlapping", "--no-nonoverlapping",
                   "Use or not the block diagonal PETSc's matrix format "
                   "for non-overlapping domain decomposition.");
-   args.AddOption(&nelems, "-nelems", "--nelems",
-                  "Max. number of serial mesh elements");
+   args.AddOption(&ref_levels, "-ref-lvls", "--ref-lvls",
+                  "Number of paralel mesh refinement levels");
    args.AddOption(&par_ref_levels, "-par-ref-lvls", "--par-ref-lvls",
                   "Number of paralel mesh refinement levels");
    args.AddOption(&dcgmg, "-dcgmg", "--dcgmg",
@@ -123,11 +123,18 @@ int main(int argc, char *argv[])
    //    'ref_levels' to be the largest number that gives a final mesh with no
    //    more than 1,000 elements.
    {
-      int ref_levels =
-         (int)floor(log(nelems/mesh->GetNE())/log(2.)/dim);
+      if (myid == 0)
+      {
+        cout << "Number of elems in input mesh: " << mesh->GetNE()
+             << " dim: " << dim << endl;
+      }
       for (int l = 0; l < ref_levels; l++)
       {
          mesh->UniformRefinement();
+      }
+      if (myid == 0)
+      {
+        cout << "Number of elems in serial mesh: " << mesh->GetNE() << endl;
       }
    }
 

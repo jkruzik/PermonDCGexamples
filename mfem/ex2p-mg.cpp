@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
    bool use_petsc = true;
    const char *petscrc_file = "";
    bool use_nonoverlapping = false;
-   double nelems = 1000;
+   int ref_levels = 1;
    int par_ref_levels = 2;
    bool dcgmg = false;
 
@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
                   "-no-nonoverlapping", "--no-nonoverlapping",
                   "Use or not the block diagonal PETSc's matrix format "
                   "for non-overlapping domain decomposition.");
-   args.AddOption(&nelems, "-nelems", "--nelems",
-                  "Max. number of serial mesh elements");
+   args.AddOption(&ref_levels, "-ref-lvls", "--ref-lvls",
+                  "Number of paralel mesh refinement levels");
    args.AddOption(&par_ref_levels, "-par-ref-lvls", "--par-ref-lvls",
                   "Number of paralel mesh refinement levels");
    args.AddOption(&dcgmg, "-dcgmg", "--dcgmg",
@@ -144,11 +144,18 @@ int main(int argc, char *argv[])
    //    'ref_levels' to be the largest number that gives a final mesh with no
    //    more than 1,000 elements.
    {
-      int ref_levels =
-         (int)floor(log(nelems/mesh->GetNE())/log(2.)/dim);
+      if (myid == 0)
+      {
+        cout << "Number of elems in input mesh: " << mesh->GetNE()
+             << " dim: " << dim << endl;
+      }
       for (int l = 0; l < ref_levels; l++)
       {
          mesh->UniformRefinement();
+      }
+      if (myid == 0)
+      {
+        cout << "Number of elems in serial mesh: " << mesh->GetNE() << endl;
       }
    }
 
@@ -375,23 +382,23 @@ int main(int argc, char *argv[])
    // 16. Save in parallel the displaced mesh and the inverted solution (which
    //     gives the backward displacements to the original grid). This output
    //     can be viewed later using GLVis: "glvis -np <np> -m mesh -g sol".
-   {
-      GridFunction *nodes = pmesh->GetNodes();
-      *nodes += x;
-      x *= -1;
+   //{
+   //   GridFunction *nodes = pmesh->GetNodes();
+   //   *nodes += x;
+   //   x *= -1;
 
-      ostringstream mesh_name, sol_name;
-      mesh_name << "mesh." << setfill('0') << setw(6) << myid;
-      sol_name << "sol." << setfill('0') << setw(6) << myid;
+   //   ostringstream mesh_name, sol_name;
+   //   mesh_name << "mesh." << setfill('0') << setw(6) << myid;
+   //   sol_name << "sol." << setfill('0') << setw(6) << myid;
 
-      ofstream mesh_ofs(mesh_name.str().c_str());
-      mesh_ofs.precision(8);
-      pmesh->Print(mesh_ofs);
+   //   ofstream mesh_ofs(mesh_name.str().c_str());
+   //   mesh_ofs.precision(8);
+   //   pmesh->Print(mesh_ofs);
 
-      ofstream sol_ofs(sol_name.str().c_str());
-      sol_ofs.precision(8);
-      x.Save(sol_ofs);
-   }
+   //   ofstream sol_ofs(sol_name.str().c_str());
+   //   sol_ofs.precision(8);
+   //   x.Save(sol_ofs);
+   //}
 
    // 17. Send the above data by socket to a GLVis server.  Use the "n" and "b"
    //     keys in GLVis to visualize the displacements.

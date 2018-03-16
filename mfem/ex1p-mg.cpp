@@ -82,7 +82,7 @@ public:
 
         for (int l = 0; l < Operators_.Size(); l++)
         {
-            Smoothers_[l] = new HypreSmoother(*Operators_[l]);
+            Smoothers_[l] = new HypreSmoother(*Operators_[l],HypreSmoother::Jacobi,1,1,-5);
             correction[l] = new Vector(Operators_[l]->GetNumRows());
             residual[l] = new Vector(Operators_[l]->GetNumRows());
         }
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
   bool use_petsc = true;
   const char *petscrc_file = "";
   bool petscmonitor = false;
-  double nelems = 1000;
+  int ref_levels = 1;
   int par_ref_levels = 2;
   bool dcgmg = false;
   bool mg = false;
@@ -212,8 +212,8 @@ int main(int argc, char *argv[])
                  "Use or not PETSc to solve the linear system.");
   args.AddOption(&petscrc_file, "-petscopts", "--petscopts",
                  "PetscOptions file to use.");
-  args.AddOption(&nelems, "-nelems", "--nelems",
-                 "Max. number of serial mesh elements");
+  args.AddOption(&ref_levels, "-ref-lvls", "--ref-lvls",
+                  "Number of paralel mesh refinement levels");
   args.AddOption(&par_ref_levels, "-par-ref-lvls", "--par-ref-lvls",
                  "Number of paralel mesh refinement levels");
   args.AddOption(&dcgmg, "-dcgmg", "--dcgmg",
@@ -250,14 +250,21 @@ int main(int argc, char *argv[])
   //    this example we do 'ref_levels' of uniform refinement. We choose
   //    'ref_levels' to be the largest number that gives a final mesh with no
   //    more than 10,000 elements.
-  {
-     int ref_levels =
-        (int)floor(log(nelems/mesh->GetNE())/log(2.)/dim);
-     for (int l = 0; l < ref_levels; l++)
-     {
-        mesh->UniformRefinement();
-     }
-  }
+   {
+      if (myid == 0)
+      {
+        cout << "Number of elems in input mesh: " << mesh->GetNE()
+             << " dim: " << dim << endl;
+      }
+      for (int l = 0; l < ref_levels; l++)
+      {
+         mesh->UniformRefinement();
+      }
+      if (myid == 0)
+      {
+        cout << "Number of elems in serial mesh: " << mesh->GetNE() << endl;
+      }
+   }
 
   // 5. Define a parallel mesh by a partitioning of the serial mesh. Refine
   //    this mesh further in parallel to increase the resolution. Once the
